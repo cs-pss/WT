@@ -2142,3 +2142,165 @@ Frequent_itemsets=apriori(numeric_transactions,min_support=0.4,use_colnames=True
 Rules=association_rules(frequent_itemsets,metric=”confidence”,min_threshold=0.7)
 Print(frequent_itemsets)
 Print(rules)
+
+
+
+import pandas as pd
+from mlxtend.frequent_patterns import apriori, association_rules
+from mlxtend.preprocessing import TransactionEncoder
+import re
+from nltk.tokenize import sent_tokenize
+import nltk
+import matplotlib.pyplot as plt
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.probability import FreqDist
+from wordcloud import WordCloud
+
+# --- Market Basket Analysis ---
+# Example 1
+transactions = [["Bread", "Milk"], ["Bread", "Diaper", "Beer", "Eggs"],
+                ["Milk", "Diaper", "Beer", "Coke"],
+                ["Bread", "Milk", "Diaper", "Beer"],
+                ["Bread", "Milk", "Diaper", "Coke"]]
+te = TransactionEncoder()
+te_array = te.fit(transactions).transform(transactions)
+df = pd.DataFrame(te_array, columns=te.columns_)
+print(df)
+freq_items = apriori(df, min_support=0.5, use_colnames=True)
+print(freq_items)
+rules = association_rules(freq_items, metric="support", min_threshold=0.05)
+print(rules)
+
+# Example 2
+dataset = [['eggs', 'milk', 'bread'], ['eggs', 'apple'], ['milk', 'bread'],
+           ['apple', 'milk'], ['milk', 'apple', 'bread']]
+te = TransactionEncoder()
+te_ary = te.fit(dataset).transform(dataset)
+df = pd.DataFrame(te_ary, columns=te.columns_)
+
+min_sup_values = [0.5, 0.6, 0.7]
+for min_sup in min_sup_values:
+    print(f"\nResults for min_support = {min_sup}")
+    frequent_itemsets = apriori(df, min_support=min_sup, use_colnames=True)
+    print("Frequent Itemsets:")
+    print(frequent_itemsets)
+    rules = association_rules(frequent_itemsets, metric='lift', min_threshold=1.0)
+    print("\nAssociation Rules:")
+    print(rules)
+
+# Example 3
+transactions = [['eggs', 'milk', 'bread'], ['eggs', 'apple'],
+                ['milk', 'bread'], ['apple', 'milk'],
+                ['milk', 'apple', 'bread']]
+te = TransactionEncoder()
+te_array = te.fit(transactions).transform(transactions)
+df = pd.DataFrame(te_array, columns=te.columns_)
+print(df)
+freq_items = apriori(df, min_support=0.5, use_colnames=True)
+print(freq_items)
+rules = association_rules(freq_items, metric="support", min_threshold=0.03)
+rules = rules.sort_values(["support", "confidence"], ascending=[False, False])
+print(rules)
+
+# Example 4
+transactions = [
+    ["Milk", "Bread", "Butter"], ["Bread", "Eggs", "Milk"],
+    ["Milk", "Eggs", "Butter"], ["Eggs", "Butter"], ["Milk", "Eggs"],
+    ["Bread", "Butter"], ["Bread", "Milk", "Eggs", "Butter"],
+    ["Eggs", "Milk"], ["Milk", "Butter"], ["Bread", "Eggs"]
+]
+te = TransactionEncoder()
+te_array = te.fit(transactions).transform(transactions)
+df = pd.DataFrame(te_array, columns=te.columns_)
+print("\n🔹 Transaction Matrix:\n", df)
+freq_items = apriori(df, min_support=0.4, use_colnames=True)
+print("\n🔹 Frequent Itemsets:\n", freq_items)
+rules = association_rules(freq_items, metric="support", min_threshold=0.2)
+rules = rules.sort_values(["support", "confidence"], ascending=[False, False])
+print("\n🔹 Association Rules:\n", rules)
+
+# Example 5
+data = {
+    'No': [1, 2, 3, 4],
+    'Company': ['Tata', 'MG', 'Kia', 'Hyundai'],
+    'Model': ['Nexon', 'Astor', 'Seltos', 'Creta'],
+    'Year': [2017, 2021, 2019, 2015]
+}
+df = pd.DataFrame(data)
+df['Company'] = pd.Categorical(df['Company']).codes
+df['Model'] = pd.Categorical(df['Model']).codes
+print("\n🔹 Transformed Dataset:")
+print(df)
+transactions = df.astype(str).values.tolist()
+te = TransactionEncoder()
+te_array = te.fit(transactions).transform(transactions)
+df_encoded = pd.DataFrame(te_array, columns=te.columns_)
+frequent_itemsets = apriori(df_encoded, min_support=0.5, use_colnames=True)
+print("\n🔹 Frequent Itemsets:")
+print(frequent_itemsets)
+association_rules_df = association_rules(frequent_itemsets,
+                                        metric="confidence",
+                                        min_threshold=0.7)
+print("\n🔹 Association Rules:")
+print(association_rules_df)
+
+
+# --- Text Summarization ---
+text = """So, keep working. Keep striving. Never give up. Fall down seven times, get up eight.
+Ease is a greater threat to progress than hardship. Ease is a greater threat to progress than hardship.
+So, keep moving, keep growing, keep learning. See you at work."""
+clean_text = re.sub(r'[^A-Za-z\s.]', '', text)
+sentences = sent_tokenize(clean_text)
+scores = {sentence: len(sentence.split()) for sentence in sentences}
+sorted_sentences = sorted(scores.items(), key=lambda x: x[1], reverse=True)
+summary_sentences = [sentence[0] for sentence in sorted_sentences[:2]]
+summary = " ".join(summary_sentences)
+print("\n🔹 Generated Summary:")
+print(summary)
+
+
+# --- Text Analysis ---
+nltk.download('punkt')
+nltk.download('stopwords')
+
+text = """Success is not final, failure is not fatal: it is the courage to continue that counts.
+Hard work and perseverance are the keys to achieving your goals. The journey of a thousand miles
+begins with a single step. Challenges and obstacles shape us into stronger individuals.
+Keep pushing forward, keep learning, and never give up on your dreams."""
+
+clean_text = re.sub(r'[^A-Za-z\s]', '', text.lower())
+words = word_tokenize(clean_text)
+sentences = sent_tokenize(text)
+
+stop_words = set(stopwords.words('english'))
+filtered_words = [word for word in words if word not in stop_words]
+
+fdist = FreqDist(filtered_words)
+plt.figure(figsize=(10, 5))
+fdist.plot(15, cumulative=False)
+plt.show()
+
+wordcloud = WordCloud(width=800, height=800, background_color='white',
+                      stopwords=stop_words,
+                      min_font_size=10).generate(" ".join(filtered_words))
+plt.figure(figsize=(8, 8), facecolor=None)
+plt.imshow(wordcloud)
+plt.axis("off")
+plt.title("Word Cloud of the Text")
+plt.show()
+
+# --- Stopwords Removal ---
+#nltk.download('stopwords')
+#nltk.download('punkt')
+
+text = """
+Hello all, Welcome to Python Programming Academy.
+Python Programming Academy is a nice platform to learn new programming skills.
+It is difficult to get enrolled in this Academy.
+"""
+tokens = word_tokenize(text)
+stop_words = set(stopwords.words('english'))
+filtered_tokens = [word for word in tokens if word.lower() not in stop_words]
+print("Filtered Tokens:")
+filtered_tokens
